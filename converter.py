@@ -6,7 +6,7 @@ class Converter:
 
     def __init__(self):
         # File path to get xml files from and send csv files to
-        self.root = 'C:/Users/Public/Documents/'
+        self.root = '/Users/todd/nmap/'
         self.path = ''
         self.save_path = self.root + self.path
         # Initialize XML file list
