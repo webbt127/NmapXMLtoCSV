@@ -2,31 +2,43 @@ import os
 import xml.etree.ElementTree as ET
 import csv
 import PySimpleGUI as sg
-import collections
 
 
 class GUI:
 
     def __init__(self):
-        self.event = ''
-        self.window = sg.Window('Nmap XML to CSV Converter By Todd Webb', [[sg.Image('POWER_LOGO.png')], [sg.Text('XML File')], [sg.Input(),
-                                                        sg.FileBrowse(initial_folder='/Users/todd/Documents')], [sg.Text('CSV Output Folder')], [sg.Input(),
-                                                        sg.FolderBrowse(initial_folder='/Users/todd/Documents')], [sg.Output(size=(50,5))], [sg.Button(key='Convert', button_text='Convert'), sg.Exit()]], background_color='White')
+        # Create the GUI window, which is a list of lists. The outer list is a list of rows which contains a list of objects
+        self.window = sg.Window('Nmap XML to CSV Converter By Todd Webb', [[sg.Image('POWER_LOGO.png')],
+                                                                           [sg.Text('XML File')],
+                                                                           [sg.Input(), sg.FileBrowse(initial_folder='/Users/todd/Documents')],
+                                                                           [sg.Text('CSV Output Folder')],
+                                                                           [sg.Input(), sg.FolderBrowse(initial_folder='/Users/todd/Documents')],
+                                                                           [sg.Output(size=(80,8))], [sg.Button(key='Convert', button_text='Convert'), sg.Exit()]
+                                                                           ], background_color='White')
         while True:
+            # Read window objects continuously and wait for event
             self.event, self.values = self.window.read()
+
+            # Convert button clicked
             if self.event == 'Convert':
+                # Check for blank entries
                 if self.values[1] != '':
                     if self.values[2] != '':
+                        # Grab specified strings from window
                         self.xml_location = self.values[1]
                         self.csv_location = self.values[2]
+                        # Verify an XML file was specified
                         if os.path.splitext(self.xml_location)[1] == '.xml':
+                            # Make a File object from the selection
                             file = File(self.xml_location, self.csv_location)
+                            # Populate Port objects
                             for host in file.host_list:
                                 host.create_ports()
                                 host.parse_ports()
                             file.parse_to_csv()
+                            print("Conversion Complete!")
                         else:
-                            print(f"Incorrect File Type: {os.path.splitext(self.xml_location)[1]}!")
+                            print(f"Incorrect File Type: {os.path.splitext(self.xml_location)[1]}")
                     else:
                         print(f"Output location {self.values[2]} does not exist!")
                 else:
@@ -108,27 +120,26 @@ class File(object):
     def parse_to_csv(self):
         # Attempt to read file if it exists
         try:
+            # Open the CSV file create the reader object
             self.csv_data = open(self.filename_csv, 'r')
             self.csv_reader = csv.reader(self.csv_data)
             self.header = next(self.csv_reader)
-            #for row1 in self.csv_reader:
-            #    for row2 in self.host_data:
-            #        if row1 == row2:
-            #            # Skip if row already exists in read file
-            #            break
-            #        elif row2 == self.host_data[-1]:
-            #            self.new_data.append(row2)
+            # Check each new row against every row of the existing file, append if it's unique'
             for row in self.host_data:
                 if row not in self.csv_reader:
                     self.new_data.append(row)
             self.csv_data.close()
+            # Reading is complete, close file and re-open with append ('a') permissions
             self.csv_data = open(self.filename_csv, 'a', encoding='utf-8', newline='')
             self.csv_writer = csv.writer(self.csv_data)
+            # Write unique rows
             self.csv_writer.writerows(self.new_data)
             self.csv_data.close()
-            print(f"File written to: {self.filename_csv}")
+            # Close CSV file
+            print(f"Additional rows written to: {self.filename_csv}")
         except Exception as e:
-            print(e)
+            #print(e)
+            print(f"File does not exist, creating {self.filename_csv}...")
             # File doesn't currently exist, create new file and dump
             self.csv_data = open(self.filename_csv, 'w', encoding='utf-8', newline='')
             self.csv_writer = csv.writer(self.csv_data)
