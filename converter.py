@@ -1,40 +1,56 @@
 import os
 import xml.etree.ElementTree as ET
 import csv
+import PySimpleGUI as sg
+import collections
 
-class Converter:
+
+class GUI:
 
     def __init__(self):
-        # File path to get xml files from and send csv files to
-        self.root = '/Users/todd/nmap/'
-        self.path = ''
-        self.save_path = self.root + self.path
-        # Initialize XML file list
-        self.xml_file_list = []
-        # Get list of XML files
-        self.get_xml_files()
-
-    def get_xml_files(self):
-        for file in os.listdir(self.save_path):
-            if file.endswith(".xml"):
-                # If the file has an XML extension, create a File object for data pre-processing and add to a list of objects
-                ob = File(self.save_path, file)
-                self.xml_file_list.append(ob)
+        self.event = ''
+        self.window = sg.Window('Nmap XML to CSV Converter By Todd Webb', [[sg.Image('POWER_LOGO.png')], [sg.Text('XML File')], [sg.Input(),
+                                                        sg.FileBrowse(initial_folder='/Users/todd/Documents')], [sg.Text('CSV Output Folder')], [sg.Input(),
+                                                        sg.FolderBrowse(initial_folder='/Users/todd/Documents')], [sg.Output(size=(50,5))], [sg.Button(key='Convert', button_text='Convert'), sg.Exit()]], background_color='White')
+        while True:
+            self.event, self.values = self.window.read()
+            if self.event == 'Convert':
+                if self.values[1] != '':
+                    if self.values[2] != '':
+                        self.xml_location = self.values[1]
+                        self.csv_location = self.values[2]
+                        if os.path.splitext(self.xml_location)[1] == '.xml':
+                            file = File(self.xml_location, self.csv_location)
+                            for host in file.host_list:
+                                host.create_ports()
+                                host.parse_ports()
+                            file.parse_to_csv()
+                        else:
+                            print(f"Incorrect File Type: {os.path.splitext(self.xml_location)[1]}!")
+                    else:
+                        print(f"Output location {self.values[2]} does not exist!")
+                else:
+                    print("No File Specified!")
+            if self.event == sg.WIN_CLOSED or self.event == 'Exit':
+                break
 
 
 class File(object):
 
-    def __init__(self, path, file):
+    def __init__(self, xml_location, csv_location):
         # Pass in file path and file name
-        self.path = path
-        self.filename_xml = file
+        self.filename_xml = xml_location
+        self.extensionless_path = os.path.splitext(self.filename_xml)[0]
+        self.basename = os.path.basename(self.extensionless_path)
+        self.filename_csv = csv_location + '/' + self.basename + '.csv'
         # Initialize variables for opening a CSV file
         self.csv_data = None
         self.csv_writer = None
+        self.csv_reader = None
+        self.new_data = []
         # Extract filename without extension
-        self.filename_name = os.path.splitext(self.filename_xml)[0]
         # Parse XML Data
-        self.xml_data = ET.parse(self.path + self.filename_xml)
+        self.xml_data = ET.parse(self.filename_xml)
         # Get XML tree
         self.root = self.xml_data.getroot()
         # Initialize lists
@@ -47,10 +63,6 @@ class File(object):
         self.create_hosts()
         # Gets data for each host in the host list
         self.parse_hosts()
-        # Append new extension to extensionless filename
-        self.filename_csv = self.filename_name + '.csv'
-        # Initialize placeholder for CSV file when we open and write to it
-        self.csvfile = None
 
 
     def create_hosts(self):
@@ -94,9 +106,31 @@ class File(object):
             self.comment = h.raw_data.attrib['comment']
 
     def parse_to_csv(self):
-        # Write to the CSV file ONLY if the file doesn't currently exist, otherwise do nothing
-        if not os.path.isfile(self.path + self.filename_csv):
-            self.csv_data = open(self.path + self.filename_csv, 'w', encoding='utf-8', newline='')
+        # Attempt to read file if it exists
+        try:
+            self.csv_data = open(self.filename_csv, 'r')
+            self.csv_reader = csv.reader(self.csv_data)
+            self.header = next(self.csv_reader)
+            #for row1 in self.csv_reader:
+            #    for row2 in self.host_data:
+            #        if row1 == row2:
+            #            # Skip if row already exists in read file
+            #            break
+            #        elif row2 == self.host_data[-1]:
+            #            self.new_data.append(row2)
+            for row in self.host_data:
+                if row not in self.csv_reader:
+                    self.new_data.append(row)
+            self.csv_data.close()
+            self.csv_data = open(self.filename_csv, 'a', encoding='utf-8', newline='')
+            self.csv_writer = csv.writer(self.csv_data)
+            self.csv_writer.writerows(self.new_data)
+            self.csv_data.close()
+            print(f"File written to: {self.filename_csv}")
+        except Exception as e:
+            print(e)
+            # File doesn't currently exist, create new file and dump
+            self.csv_data = open(self.filename_csv, 'w', encoding='utf-8', newline='')
             self.csv_writer = csv.writer(self.csv_data)
             headers = ['Status', 'IP', 'IP Type', 'MAC Address', 'Host', 'OS', 'Protocol', 'Port', 'State', 'Service', 'Vendor', 'Notes']
             self.csv_writer.writerow(headers)
