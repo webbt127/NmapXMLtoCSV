@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=C:\Users\todd_\OneDrive\Documents\GitHub\NmapXMLtoCSVx\venv_win
+set VIRTUAL_ENV=C:\Users\twebb\OneDrive - POWER Engineers, Inc\Documents\GitHub\NmapXMLtoCSV\venv_win
 
 if not defined PROMPT set PROMPT=$P$G
 
