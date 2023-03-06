@@ -8,7 +8,7 @@ class GUI:
 
     def __init__(self):
         # Create the GUI window, which is a list of lists. The outer list is a list of rows which contains a list of objects
-        self.window = sg.Window('Nmap XML to CSV Converter By Todd Webb', [[sg.Image('POWER_LOGO.png')],
+        self.window = sg.Window('Nmap XML to CSV Converter v1.1 By Todd Webb', [[sg.Image('POWER_LOGO.png')],
                                                                            [sg.Text('XML File')],
                                                                            [sg.Input(), sg.FileBrowse(initial_folder='/Users/todd/Documents')],
                                                                            [sg.Text('CSV Output Folder')],
