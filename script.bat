@@ -1,1 +1,1 @@
-venv_win\Scripts\activate & python main.py & pause
+venv_win\Scripts\activate & python main.py

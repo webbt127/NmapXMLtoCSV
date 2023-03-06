@@ -1,1 +1,1 @@
-venv_win\Scripts\activate & pip install --no-index --find-links . -r pkgs\requirements.txt & pause
+venv_win\Scripts\activate & pip install --no-index --find-links . -r pkgs\requirements.txt
