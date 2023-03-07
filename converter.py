@@ -86,17 +86,23 @@ class File(object):
     def parse_hosts(self):
         # Parse each host for data
         for h in self.host_list:
-            h.status = h.raw_data.findall('status')[0].attrib['state']
-            h.ip_address = h.raw_data.findall('address')[0].attrib['addr']
-            h.ip_address_type = h.raw_data.findall('address')[0].attrib['addrtype']
+            hostAddressElement = h.raw_data.findall('address')
+            hostStatusElement = h.raw_data.findall('status')
+
+            h.host_name_element = h.raw_data.findall('hostnames')
+            h.port_element = h.raw_data.findall('ports')
+            h.os_element = h.raw_data.findall('os')
+
+            h.status = hostStatusElement[0].attrib['state']
+            h.ip_address = hostAddressElement[0].attrib['addr']
+            h.ip_address_type = hostAddressElement[0].attrib['addrtype']
             # Attempt to get MAC Address and Vendor name, return '' otherwise
             try:
-                h.mac_address = h.raw_data.findall('address')[1].attrib['addr']
-                h.vendor = h.raw_data.findall('address')[1].attrib['vendor']
+                h.mac_address = hostAddressElement[1].attrib['addr']
+                h.vendor = hostAddressElement[1].attrib['vendor']
             except IndexError:
                 h.mac_address = ''
                 h.vendor = ''
-            h.host_name_element = h.raw_data.findall('hostnames')
             # Attempt to get Host Name if it has one, return '' otherwise
             try:
                 h.host_name = h.host_name_element[0].findall('hostname')[0].attrib['name']
@@ -104,13 +110,11 @@ class File(object):
                 h.host_name = ''
             #Attempt to get OS info if available, return '' otherwise
             try:
-                h.os_element = h.raw_data.findall('os')
                 h.os_name = h.os_element[0].findall('osmatch')[0].attrib['name']
             except IndexError:
                 h.os_name = ''
             # Attempt to get ports if available, return '' otherwise
             try:
-                h.port_element = h.raw_data.findall('ports')
                 h.ports = h.port_element[0].findall('port')
             except IndexError:
                 h.ports = ''
