@@ -2,11 +2,28 @@ import os
 import xml.etree.ElementTree as ET
 import csv
 import PySimpleGUI as sg
+import pandas as pd
 
 
-class GUI:
+class GUI():
 
-    def __init__(self):
+    def __init__(self, file_path=None, folder_path=None):
+        if file_path is not None and folder_path is not None:
+            self.xml_location = file_path
+            self.csv_location = folder_path
+            if os.path.splitext(self.xml_location)[1] == '.xml':
+                # Make a File object from the selection
+                file = File(self.xml_location, self.csv_location)
+                # Populate Port objects
+                for host in file.host_list:
+                    host.create_ports()
+                    host.parse_ports()
+                file.parse_to_csv()
+                print("Conversion Complete!")
+            else:
+                print(f"Incorrect File Type: {os.path.splitext(self.xml_location)[1]}")
+            return
+
         # Create the GUI window, which is a list of lists. The outer list is a list of rows which contains a list of objects
         self.window = sg.Window('Nmap XML to CSV Converter v1.2', [[sg.Image('POWER_LOGO.png')],
                                                                            [sg.Text('XML File')],
@@ -60,6 +77,8 @@ class File(object):
         self.csv_writer = None
         self.csv_reader = None
         self.new_data = []
+        self.header = ['Status', 'IP', 'IP Type', 'MAC Address', 'Host', 'OS', 'Protocol', 'Ports', 'State',
+                           'Services', 'Vendor', 'Notes']
         # Extract filename without extension
         # Parse XML Data
         self.xml_data = ET.parse(self.filename_xml)
@@ -121,6 +140,54 @@ class File(object):
             #Read NMAP host comment, usually blank unless filled in on NMAP
             self.comment = h.raw_data.attrib['comment']
 
+    import pandas as pd
+
+    def parse_to_csv(self):
+        try:
+            # Read the existing CSV file into a DataFrame
+            existing_df = pd.read_csv(self.filename_csv)
+            print(f"File exists, comparing data with {self.filename_csv}...")
+        except FileNotFoundError:
+            existing_df = pd.DataFrame(columns=self.header)
+            print(f"File does not exist, creating {self.filename_csv}...")
+
+        # Create a new DataFrame from the host_data
+        new_data_df = pd.DataFrame(self.host_data, columns=self.header)
+
+        # Convert lists to strings in both existing_df and new_data_df
+        existing_df = existing_df.applymap(lambda x: ','.join(x) if isinstance(x, list) else x)
+        new_data_df = new_data_df.applymap(lambda x: ','.join(x) if isinstance(x, list) else x)
+
+        # Concatenate the existing DataFrame and the new_data DataFrame
+        combined_df = pd.concat([existing_df, new_data_df], ignore_index=True)
+
+        # Replace NaN values with empty strings
+        combined_df.fillna("", inplace=True)
+
+        # Remove duplicates
+        combined_df.drop_duplicates(inplace=True)
+
+        # Sort by IP
+        combined_df.sort_values(by='IP', inplace=True)
+
+        # Write the combined DataFrame to the CSV file
+        combined_df.to_csv(self.filename_csv, index=False)
+
+'''
+        
+            print(f"File does not exist, creating {self.filename_csv}...")
+            # File doesn't currently exist, create new file and dump
+            with open(self.filename_csv, 'w', encoding='utf-8', newline='') as csv_data:
+                csv_writer = csv.writer(csv_data)
+                headers = ['Status', 'IP', 'IP Type', 'MAC Address', 'Host', 'OS', 'Protocol', 'Ports', 'State',
+                           'Services', 'Vendor', 'Notes']
+                csv_writer.writerow(headers)
+                for row in self.host_data:
+                    csv_writer.writerow([','.join(x) if isinstance(x, list) else x for x in row])
+'''
+
+
+'''
     def parse_to_csv(self):
         # Attempt to read file if it exists
         try:
@@ -128,7 +195,7 @@ class File(object):
             self.csv_data = open(self.filename_csv, 'r')
             self.csv_reader = csv.reader(self.csv_data)
             self.header = next(self.csv_reader)
-            # Check each new row against every row of the existing file, append if it's unique'
+            # Check each new row against every row of the existing file, append if it's unique
             for row in self.host_data:
                 if row not in self.csv_reader:
                     self.new_data.append(row)
@@ -151,6 +218,8 @@ class File(object):
             self.csv_writer.writerow(headers)
             self.csv_writer.writerows(self.host_data)
             self.csv_data.close()
+'''
+
 
 
 
