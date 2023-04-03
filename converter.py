@@ -8,7 +8,7 @@ class GUI:
 
     def __init__(self):
         # Create the GUI window, which is a list of lists. The outer list is a list of rows which contains a list of objects
-        self.window = sg.Window('Nmap XML to CSV Converter v1.1 By Todd Webb', [[sg.Image('POWER_LOGO.png')],
+        self.window = sg.Window('Nmap XML to CSV Converter v1.2', [[sg.Image('POWER_LOGO.png')],
                                                                            [sg.Text('XML File')],
                                                                            [sg.Input(), sg.FileBrowse(initial_folder='/Users/todd/Documents')],
                                                                            [sg.Text('CSV Output Folder')],
@@ -147,7 +147,7 @@ class File(object):
             # File doesn't currently exist, create new file and dump
             self.csv_data = open(self.filename_csv, 'w', encoding='utf-8', newline='')
             self.csv_writer = csv.writer(self.csv_data)
-            headers = ['Status', 'IP', 'IP Type', 'MAC Address', 'Host', 'OS', 'Protocol', 'Port', 'State', 'Service', 'Vendor', 'Notes']
+            headers = ['Status', 'IP', 'IP Type', 'MAC Address', 'Host', 'OS', 'Protocol', 'Ports', 'State', 'Services', 'Vendor', 'Notes']
             self.csv_writer.writerow(headers)
             self.csv_writer.writerows(self.host_data)
             self.csv_data.close()
@@ -174,6 +174,10 @@ class Host(object):
         self.ip_address_type = ''
         self.comment = ''
         self.status = ''
+        self.state_list = []
+        self.service_list = []
+        self.port_id_list = []
+        self.protocol_list = []
 
     def create_ports(self):
         # Create a Port object for every host in the XML file
@@ -191,10 +195,14 @@ class Host(object):
         else:
             for p in self.ports_list:
                 p.protocol = p.raw_data.attrib['protocol']
+                self.protocol_list.append(p.protocol)
                 p.port_id = p.raw_data.attrib['portid']
+                self.port_id_list.append(p.port_id)
                 p.service = p.raw_data.findall('service')[0].attrib['name']
+                self.service_list.append(p.service)
                 try:
                     p.state = p.raw_data.findall('state')[0].attrib['state']
+                    self.state_list.append(p.state)
                 except (IndexError, KeyError):
                     p.state = ''
                 # Unused data points, leaving in code in case they're needed
@@ -215,12 +223,12 @@ class Host(object):
                 #except (IndexError, KeyError):
                 #    p.script_output = ''
 
-                # Compile a list of data for each port
-                self.port_data.extend((self.status, self.ip_address, self.ip_address_type, self.mac_address, self.host_name, self.os_name, p.protocol, p.port_id, p.state, p.service, self.vendor, self.comment))
-                # Copy data out to file object
-                self.file.host_data.append(self.port_data)
-                # Reset port data for next iteration
-                self.port_data = []
+            # Compile a list of data for each port
+            self.port_data.extend((self.status, self.ip_address, self.ip_address_type, self.mac_address, self.host_name, self.os_name, self.protocol_list, self.port_id_list, self.state_list, self.service_list, self.vendor, self.comment))
+            # Copy data out to file object
+            self.file.host_data.append(self.port_data)
+            # Reset port data for next iteration
+            self.port_data = []
 
 
 class Port(object):

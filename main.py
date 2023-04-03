@@ -3,8 +3,7 @@
 OWNER: POWER Engineers Inc.
 SCRIPT: NMAP XML to CSV Converter
 VERSION: 1.1
-AUTHOR: TWEBB
-DESCRIPTION: Reads in an XML fils and builds an object tree that can be written to CSV format
+DESCRIPTION: Reads in an XML files and builds an object tree that can be written to CSV format
 ************************************************************************************************************************
 """
 
