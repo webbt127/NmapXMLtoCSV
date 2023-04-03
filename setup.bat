@@ -1,1 +1,1 @@
-venv_win\Scripts\activate & pip install --no-index --find-links . -r pkgs\requirements.txt
+python -m venv venv_win & venv_win\Scripts\activate.bat & pip install --no-index --find-links . -r pkgs\requirements.txt & pause

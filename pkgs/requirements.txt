@@ -1,7 +1,7 @@
-numpy==1.24.2
-pandas==2.0.0
-PySimpleGUI==4.60.4
-python-dateutil==2.8.2
-pytz==2023.3
-six==1.16.0
-tzdata==2023.3
+pkgs\numpy-1.24.2-cp311-cp311-win_amd64.whl
+pkgs\pandas-2.0.0-cp311-cp311-win_amd64.whl
+pkgs\PySimpleGUI-4.60.4-py3-none-any.whl
+pkgs\python_dateutil-2.8.2-py2.py3-none-any.whl
+pkgs\pytz-2023.3-py2.py3-none-any.whl
+pkgs\six-1.16.0-py2.py3-none-any.whl
+pkgs\tzdata-2023.3-py2.py3-none-any.whl
