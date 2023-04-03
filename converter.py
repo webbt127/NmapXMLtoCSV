@@ -195,14 +195,16 @@ class Host(object):
         else:
             for p in self.ports_list:
                 p.protocol = p.raw_data.attrib['protocol']
-                self.protocol_list.append(p.protocol)
+                if p.protocol not in self.protocol_list:
+                    self.protocol_list.append(p.protocol)
                 p.port_id = p.raw_data.attrib['portid']
                 self.port_id_list.append(p.port_id)
                 p.service = p.raw_data.findall('service')[0].attrib['name']
                 self.service_list.append(p.service)
                 try:
                     p.state = p.raw_data.findall('state')[0].attrib['state']
-                    self.state_list.append(p.state)
+                    if p.state not in self.state_list:
+                        self.state_list.append(p.state)
                 except (IndexError, KeyError):
                     p.state = ''
                 # Unused data points, leaving in code in case they're needed
