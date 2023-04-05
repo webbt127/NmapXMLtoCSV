@@ -39,7 +39,6 @@ class GUI():
             # Convert button clicked
             try:
                 if self.event == 'Convert':
-                    print(self.values)
                     # Check for blank entries
                     if self.values[1] != '':
                         if self.values['folder_browse'] != '' or self.values['create_new'] == False:
