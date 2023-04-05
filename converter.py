@@ -25,43 +25,49 @@ class GUI():
             return
 
         # Create the GUI window, which is a list of lists. The outer list is a list of rows which contains a list of objects
-        self.window = sg.Window('Nmap XML to CSV Converter v1.2', [[sg.Image('POWER_LOGO.png')],
-                                                                           [sg.Text('XML File')],
-                                                                           [sg.Input(), sg.FileBrowse(initial_folder='/Users/todd/Documents')],
-                                                                           [sg.Text('CSV Output Folder')],
-                                                                           [sg.Input(), sg.FolderBrowse(initial_folder='/Users/todd/Documents')],
-                                                                           [sg.Output(size=(80,8))], [sg.Button(key='Convert', button_text='Convert'), sg.Exit()]
-                                                                           ], background_color='White')
+        self.layout = [[sg.Image('POWER_LOGO.png', expand_x=True, background_color='White')],
+                       [sg.Text('XML File')],
+                       [sg.Input(), sg.FileBrowse(initial_folder='/Users/todd/Documents')],
+                       [sg.Radio('Create new CSV', "RADIO1", key='create_new', default=True, enable_events=True, expand_x=True), sg.Radio('Update existing CSV', "RADIO1", key='update_existing', default=False, enable_events=True, expand_x=True)],[sg.Input('', key='output_folder', visible=True),sg.FolderBrowse(initial_folder='/Users/todd/Documents', key='folder_browse'),
+                       sg.Input('', key='existing_csv', visible=True), sg.FileBrowse('Select', initial_folder='/Users/todd/Documents', key='file_browse',visible=True)],
+                       [sg.Output(size=(80, 8))], [sg.Button(key='Convert', button_text='Convert'), sg.Exit()]]
+        self.window = sg.Window('Nmap XML to CSV Converter v1.4', self.layout, background_color='White')
         while True:
             # Read window objects continuously and wait for event
             self.event, self.values = self.window.read()
 
             # Convert button clicked
-            if self.event == 'Convert':
-                # Check for blank entries
-                if self.values[1] != '':
-                    if self.values[2] != '':
-                        # Grab specified strings from window
-                        self.xml_location = self.values[1]
-                        self.csv_location = self.values[2]
-                        # Verify an XML file was specified
-                        if os.path.splitext(self.xml_location)[1] == '.xml':
-                            # Make a File object from the selection
-                            file = File(self.xml_location, self.csv_location)
-                            # Populate Port objects
-                            for host in file.host_list:
-                                host.create_ports()
-                                host.parse_ports()
-                            file.parse_to_csv()
-                            print("Conversion Complete!")
+            try:
+                if self.event == 'Convert':
+                    print(self.values)
+                    # Check for blank entries
+                    if self.values[1] != '':
+                        if self.values['folder_browse'] != '' or self.values['create_new'] == False:
+                            # Grab specified strings from window
+                            self.xml_location = self.values[1]
+                            self.csv_location = self.values['folder_browse']
+                            # Verify an XML file was specified
+                            if os.path.splitext(self.xml_location)[1] == '.xml':
+                                # Make a File object from the selection
+                                file = File(self.xml_location, self.csv_location)
+                                if not self.values['create_new']:
+                                    file.filename_csv = self.values['existing_csv']
+                                # Populate Port objects
+                                for host in file.host_list:
+                                    host.create_ports()
+                                    host.parse_ports()
+                                file.parse_to_csv()
+                                print("Conversion Complete!")
+                            else:
+                                print(f"Incorrect File Type: {os.path.splitext(self.xml_location)[1]}")
                         else:
-                            print(f"Incorrect File Type: {os.path.splitext(self.xml_location)[1]}")
+                            print(f"Output location {self.values[2]} does not exist!")
                     else:
-                        print(f"Output location {self.values[2]} does not exist!")
-                else:
-                    print("No File Specified!")
-            if self.event == sg.WIN_CLOSED or self.event == 'Exit':
-                break
+                        print("No File Specified!")
+                if self.event == sg.WIN_CLOSED or self.event == 'Exit':
+                    break
+            except Exception as e:
+                print(f'Unable to process conversion: {e}')
 
 
 class File(object):
