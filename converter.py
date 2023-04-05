@@ -160,8 +160,8 @@ class File(object):
         new_data_df = pd.DataFrame(self.host_data, columns=self.header)
 
         # Convert lists to strings in both existing_df and new_data_df
-        existing_df = existing_df.applymap(lambda x: ','.join(x) if isinstance(x, list) else x)
-        new_data_df = new_data_df.applymap(lambda x: ','.join(x) if isinstance(x, list) else x)
+        existing_df = existing_df.applymap(lambda x: ';'.join(x) if isinstance(x, list) else x)
+        new_data_df = new_data_df.applymap(lambda x: ';'.join(x) if isinstance(x, list) else x)
 
         # Concatenate the existing DataFrame and the new_data DataFrame
         combined_df = pd.concat([existing_df, new_data_df], ignore_index=True)
@@ -171,7 +171,7 @@ class File(object):
 
         # Group by IP and apply a custom aggregation function to combine unique values
         combined_df = combined_df.groupby('IP', as_index=False).agg(
-            lambda x: ','.join(set(x.str.split(',').sum())) if x.dtype == "object" else x.unique().tolist())
+            lambda x: ';'.join(set(x.str.split(';').sum())) if x.dtype == "object" else x.unique().tolist())
 
         # Remove duplicates
         combined_df.drop_duplicates(inplace=True)
