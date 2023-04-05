@@ -257,8 +257,9 @@ class Host(object):
     def parse_ports(self):
         # If host contains no ports, send host data to file
         if len(self.ports_list) < 1:
-            self.port_data.extend((self.status, self.ip_address, self.ip_address_type, self.mac_address, self.host_name, self.os_name, '',
-                                   '', '', '', self.vendor, self.comment))
+            self.port_data.extend(
+                (self.status, self.ip_address, self.ip_address_type, self.mac_address, self.host_name, self.os_name, '',
+                 '', '', '', self.vendor, self.comment))
             self.file.host_data.append(self.port_data)
         # If ports are present, iterate through and parse data
         else:
@@ -276,26 +277,11 @@ class Host(object):
                         self.state_list.append(p.state)
                 except (IndexError, KeyError):
                     p.state = ''
-                # Unused data points, leaving in code in case they're needed
-                #try:
-                #    p.product = p.raw_data.findall('service')[0].attrib['product']
-                #except (IndexError, KeyError):
-                #    p.product = ''
-                #try:
-                #    p.servicefp = p.raw_data.findall('service')[0].attrib['servicefp']
-                #except (IndexError, KeyError):
-                #    p.servicefp = ''
-                #try:
-                #    p.script_id = p.raw_data.findall('script')[0].attrib['id']
-                #except (IndexError, KeyError):
-                #    p.script_id = ''
-                #try:
-                #    p.script_output = p.raw_data.findall('script')[0].attrib['output']
-                #except (IndexError, KeyError):
-                #    p.script_output = ''
 
             # Compile a list of data for each port
-            self.port_data.extend((self.status, self.ip_address, self.ip_address_type, self.mac_address, self.host_name, self.os_name, self.protocol_list, self.port_id_list, self.state_list, self.service_list, self.vendor, self.comment))
+            self.port_data.extend((self.status, self.ip_address, self.ip_address_type, self.mac_address, self.host_name,
+                                   self.os_name, ';'.join(self.protocol_list), ';'.join(self.port_id_list),
+                                   ';'.join(self.state_list), ';'.join(self.service_list), self.vendor, self.comment))
             # Copy data out to file object
             self.file.host_data.append(self.port_data)
             # Reset port data for next iteration
