@@ -164,6 +164,10 @@ class File(object):
         # Replace NaN values with empty strings
         combined_df.fillna("", inplace=True)
 
+        # Group by IP and apply a custom aggregation function to combine unique values
+        combined_df = combined_df.groupby('IP', as_index=False).agg(
+            lambda x: ','.join(set(x.str.split(',').sum())) if x.dtype == "object" else x.unique().tolist())
+
         # Remove duplicates
         combined_df.drop_duplicates(inplace=True)
 
@@ -172,6 +176,7 @@ class File(object):
 
         # Write the combined DataFrame to the CSV file
         combined_df.to_csv(self.filename_csv, index=False)
+
 
 '''
         
