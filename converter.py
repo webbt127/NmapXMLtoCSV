@@ -1,8 +1,8 @@
 import os
 import xml.etree.ElementTree as ET
-import csv
 import PySimpleGUI as sg
 import pandas as pd
+from datetime import datetime
 
 
 class GUI():
@@ -27,11 +27,11 @@ class GUI():
         # Create the GUI window, which is a list of lists. The outer list is a list of rows which contains a list of objects
         self.layout = [[sg.Image('POWER_LOGO.png', expand_x=True, background_color='White')],
                        [sg.Text('XML File')],
-                       [sg.Input(), sg.FileBrowse(initial_folder='/Users/todd/Documents')],
+                       [sg.Input(), sg.FilesBrowse(initial_folder='/Users/todd/Documents')],
                        [sg.Radio('Create new CSV', "RADIO1", key='create_new', default=True, enable_events=True, expand_x=True), sg.Radio('Update existing CSV', "RADIO1", key='update_existing', default=False, enable_events=True, expand_x=True)],[sg.Input('', key='output_folder', visible=True),sg.FolderBrowse(initial_folder='/Users/todd/Documents', key='folder_browse'),
-                       sg.Input('', key='existing_csv', visible=True), sg.FileBrowse('Select', initial_folder='/Users/todd/Documents', key='file_browse',visible=True)],
+                       sg.Input('', key='existing_csv', visible=True), sg.FilesBrowse('Select', initial_folder='/Users/todd/Documents', key='file_browse',visible=True)],
                        [sg.Output(size=(80, 8))], [sg.Button(key='Convert', button_text='Convert'), sg.Exit()]]
-        self.window = sg.Window('Nmap XML to CSV Converter v1.4', self.layout, background_color='White')
+        self.window = sg.Window('Nmap XML to CSV Converter v2.0', self.layout, background_color='White')
         while True:
             # Read window objects continuously and wait for event
             self.event, self.values = self.window.read()
@@ -43,22 +43,27 @@ class GUI():
                     if self.values[1] != '':
                         if self.values['folder_browse'] != '' or self.values['create_new'] == False:
                             # Grab specified strings from window
-                            self.xml_location = self.values[1]
+                            self.xml_location = self.values[1].split(';') # This is a list
                             self.csv_location = self.values['folder_browse']
+                            print(self.values)
                             # Verify an XML file was specified
-                            if os.path.splitext(self.xml_location)[1] == '.xml':
-                                # Make a File object from the selection
-                                file = File(self.xml_location, self.csv_location)
-                                if not self.values['create_new']:
-                                    file.filename_csv = self.values['existing_csv']
-                                # Populate Port objects
-                                for host in file.host_list:
-                                    host.create_ports()
-                                    host.parse_ports()
-                                file.parse_to_csv()
-                                print("Conversion Complete!")
-                            else:
-                                print(f"Incorrect File Type: {os.path.splitext(self.xml_location)[1]}")
+                            files = []
+                            for item in self.xml_location:
+                                if os.path.splitext(item)[1] == '.xml':
+                                    # Make a File object from the selection
+                                    file = File(item, self.csv_location)
+                                    files.append(file)
+                                    if not self.values['create_new']:
+                                        file.filename_csv = self.values['existing_csv']
+                                    # Populate Port objects
+                                    for host in file.host_list:
+                                        host.create_ports()
+                                        host.parse_ports()
+                                    file.parse_to_csv()
+                                    print("Conversion Complete!")
+                                else:
+                                    print(f"Incorrect File Type: {os.path.splitext(self.xml_location)[1]}")
+                            files[0].merge(files)
                         else:
                             print(f"Output location {self.values[2]} does not exist!")
                     else:
@@ -77,12 +82,13 @@ class File(object):
         self.extensionless_path = os.path.splitext(self.filename_xml)[0]
         self.basename = os.path.basename(self.extensionless_path)
         self.filename_csv = csv_location + '/' + self.basename + '.csv'
+        self.csv_location = csv_location
         # Initialize variables for opening a CSV file
         self.csv_data = None
         self.csv_writer = None
         self.csv_reader = None
         self.new_data = []
-        self.header = ['Status', 'IP', 'IP Type', 'MAC Address', 'Host', 'OS', 'Protocol', 'Ports', 'State',
+        self.header = ['Status', 'IP', 'Octet 1', 'Octet 2', 'Octet 3', 'Octet 4', 'IP Type', 'MAC Address', 'Host', 'OS', 'Protocol', 'Ports', 'State',
                            'Services', 'Vendor', 'Notes']
         # Extract filename without extension
         # Parse XML Data
@@ -119,6 +125,7 @@ class File(object):
 
             h.status = hostStatusElement[0].attrib['state']
             h.ip_address = hostAddressElement[0].attrib['addr']
+            h.octets = h.ip_address.split('.')
             h.ip_address_type = hostAddressElement[0].attrib['addrtype']
             # Attempt to get MAC Address and Vendor name, return '' otherwise
             try:
@@ -145,7 +152,6 @@ class File(object):
             #Read NMAP host comment, usually blank unless filled in on NMAP
             self.comment = h.raw_data.attrib['comment']
 
-    import pandas as pd
 
     def parse_to_csv(self):
         try:
@@ -171,66 +177,41 @@ class File(object):
 
         # Group by IP and apply a custom aggregation function to combine unique values
         combined_df = combined_df.groupby('IP', as_index=False).agg(
-            lambda x: ';'.join(set(x.str.split(';').sum())) if x.dtype == "object" else x.unique().tolist())
+            lambda x: ';'.join(set(y for y in x.astype(str).str.split(';').sum() if
+                                   isinstance(y, str))) if x.dtype == "object" else x.unique().tolist())
 
         # Remove duplicates
         combined_df.drop_duplicates(inplace=True)
 
         # Sort by IP
-        combined_df.sort_values(by='IP', inplace=True)
+        combined_df['IP_tuple'] = combined_df['IP'].apply(lambda ip: tuple(map(int, ip.split('.'))))
+        combined_df.sort_values(by='IP_tuple', inplace=True)
+        combined_df.drop(columns='IP_tuple', inplace=True)
 
         # Write the combined DataFrame to the CSV file
         combined_df.to_csv(self.filename_csv, index=False)
 
 
-'''
-        
-            print(f"File does not exist, creating {self.filename_csv}...")
-            # File doesn't currently exist, create new file and dump
-            with open(self.filename_csv, 'w', encoding='utf-8', newline='') as csv_data:
-                csv_writer = csv.writer(csv_data)
-                headers = ['Status', 'IP', 'IP Type', 'MAC Address', 'Host', 'OS', 'Protocol', 'Ports', 'State',
-                           'Services', 'Vendor', 'Notes']
-                csv_writer.writerow(headers)
-                for row in self.host_data:
-                    csv_writer.writerow([','.join(x) if isinstance(x, list) else x for x in row])
-'''
+    def merge(self, files):
+        combined_df = pd.DataFrame()
+        #try:
+        for file in files:
+            existing_df = pd.read_csv(file.filename_csv)
+            combined_df = pd.concat([existing_df, combined_df], ignore_index=True)
+            # Remove duplicates
+            combined_df.drop_duplicates(inplace=True)
 
+            # Sort by IP
+            combined_df['IP_tuple'] = combined_df['IP'].apply(lambda ip: tuple(map(int, ip.split('.'))))
+            combined_df.sort_values(by='IP_tuple', inplace=True)
+            combined_df.drop(columns='IP_tuple', inplace=True)
 
-'''
-    def parse_to_csv(self):
-        # Attempt to read file if it exists
-        try:
-            # Open the CSV file create the reader object
-            self.csv_data = open(self.filename_csv, 'r')
-            self.csv_reader = csv.reader(self.csv_data)
-            self.header = next(self.csv_reader)
-            # Check each new row against every row of the existing file, append if it's unique
-            for row in self.host_data:
-                if row not in self.csv_reader:
-                    self.new_data.append(row)
-            self.csv_data.close()
-            # Reading is complete, close file and re-open with append ('a') permissions
-            self.csv_data = open(self.filename_csv, 'a', encoding='utf-8', newline='')
-            self.csv_writer = csv.writer(self.csv_data)
-            # Write unique rows
-            self.csv_writer.writerows(self.new_data)
-            self.csv_data.close()
-            # Close CSV file
-            print(f"Additional rows written to: {self.filename_csv}")
-        except Exception as e:
-            #print(e)
-            print(f"File does not exist, creating {self.filename_csv}...")
-            # File doesn't currently exist, create new file and dump
-            self.csv_data = open(self.filename_csv, 'w', encoding='utf-8', newline='')
-            self.csv_writer = csv.writer(self.csv_data)
-            headers = ['Status', 'IP', 'IP Type', 'MAC Address', 'Host', 'OS', 'Protocol', 'Ports', 'State', 'Services', 'Vendor', 'Notes']
-            self.csv_writer.writerow(headers)
-            self.csv_writer.writerows(self.host_data)
-            self.csv_data.close()
-'''
-
-
+            # Write the combined DataFrame to the CSV file
+            print(self.csv_location)
+        combined_df.to_csv(f'{self.csv_location}/Inventory{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv', index=False)
+        print("Files Combined Successfully!")
+        #except:
+        #    print("Error While Combining Files")
 
 
 class Host(object):
@@ -268,7 +249,7 @@ class Host(object):
         # If host contains no ports, send host data to file
         if len(self.ports_list) < 1:
             self.port_data.extend(
-                (self.status, self.ip_address, self.ip_address_type, self.mac_address, self.host_name, self.os_name, '',
+                (self.status, self.ip_address, self.octets[0], self.octets[1], self.octets[2], self.octets[3], self.ip_address_type, self.mac_address, self.host_name, self.os_name, '',
                  '', '', '', self.vendor, self.comment))
             self.file.host_data.append(self.port_data)
         # If ports are present, iterate through and parse data
@@ -289,7 +270,7 @@ class Host(object):
                     p.state = ''
 
             # Compile a list of data for each port
-            self.port_data.extend((self.status, self.ip_address, self.ip_address_type, self.mac_address, self.host_name,
+            self.port_data.extend((self.status, self.ip_address, self.octets[0], self.octets[1], self.octets[2], self.octets[3], self.ip_address_type, self.mac_address, self.host_name,
                                    self.os_name, ';'.join(self.protocol_list), ';'.join(self.port_id_list),
                                    ';'.join(self.state_list), ';'.join(self.service_list), self.vendor, self.comment))
             # Copy data out to file object
