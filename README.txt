@@ -10,6 +10,8 @@ Instructions:
 
 
 Dependencies:
+    python-3.11.2-amd64.exe	(https://www.python.org/ftp/python/3.11.2/python-3.11.2-amd64.exe)
+    npp.8.5.1.Installer.exe	(https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.5.1/npp.8.5.1.Installer.x64.exe)
     pkgs\numpy-1.24.2-cp311-cp311-win_amd64.whl (https://pypi.org/project/numpy/#copy-hash-modal-ac13366d-7265-4abc-b0b5-11067d40e6b4)
     pkgs\pandas-2.0.0-cp311-cp311-win_amd64.whl (https://pypi.org/project/pandas/#copy-hash-modal-87434ecf-a1b4-4a20-9e24-2f900a5b2fa3)
     pkgs\PySimpleGUI-4.60.4-py3-none-any.whl    (https://pypi.org/project/PySimpleGUI/#copy-hash-modal-f396e13d-460e-4a94-8dd1-af8855b2f673)
