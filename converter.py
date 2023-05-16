@@ -182,6 +182,7 @@ class File(object):
 
         # Remove duplicates
         combined_df.drop_duplicates(inplace=True)
+        combined_df = combined_df[combined_df['Status'] != 'down']
 
         # Sort by IP
         combined_df['IP_tuple'] = combined_df['IP'].apply(lambda ip: tuple(map(int, ip.split('.'))))
