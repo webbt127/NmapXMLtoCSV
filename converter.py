@@ -88,7 +88,7 @@ class File(object):
         self.csv_writer = None
         self.csv_reader = None
         self.new_data = []
-        self.header = ['Status', 'IP', 'Octet 1', 'Octet 2', 'Octet 3', 'Octet 4', 'IP Type', 'MAC Address', 'Host', 'OS', 'Protocol', 'Ports', 'State',
+        self.header = ['IP', 'Octet 1', 'Octet 2', 'Octet 3', 'Octet 4', 'Status', 'IP Type', 'MAC Address', 'Host', 'OS', 'Protocol', 'Ports', 'State',
                            'Services', 'Vendor', 'Notes']
         # Extract filename without extension
         # Parse XML Data
@@ -250,7 +250,7 @@ class Host(object):
         # If host contains no ports, send host data to file
         if len(self.ports_list) < 1:
             self.port_data.extend(
-                (self.status, self.ip_address, self.octets[0], self.octets[1], self.octets[2], self.octets[3], self.ip_address_type, self.mac_address, self.host_name, self.os_name, '',
+                (self.ip_address, self.octets[0], self.octets[1], self.octets[2], self.octets[3], self.status, self.ip_address_type, self.mac_address, self.host_name, self.os_name, '',
                  '', '', '', self.vendor, self.comment))
             self.file.host_data.append(self.port_data)
         # If ports are present, iterate through and parse data
@@ -271,7 +271,7 @@ class Host(object):
                     p.state = ''
 
             # Compile a list of data for each port
-            self.port_data.extend((self.status, self.ip_address, self.octets[0], self.octets[1], self.octets[2], self.octets[3], self.ip_address_type, self.mac_address, self.host_name,
+            self.port_data.extend((self.ip_address, self.octets[0], self.octets[1], self.octets[2], self.octets[3], self.status, self.ip_address_type, self.mac_address, self.host_name,
                                    self.os_name, ';'.join(self.protocol_list), ';'.join(self.port_id_list),
                                    ';'.join(self.state_list), ';'.join(self.service_list), self.vendor, self.comment))
             # Copy data out to file object
